@@ -127,11 +127,11 @@ módulos e as regras que orientarão a implementação.
 
 **Critérios de conclusão:**
 
--   [ ] Arquitetura geral definida.
--   [ ] Módulos e responsabilidades definidos.
--   [ ] Estratégias de concorrência e idempotência documentadas.
--   [ ] Decisão sobre autenticação registrada.
--   [ ] Documentação inicial criada.
+-   [x] Arquitetura geral definida.
+-   [x] Módulos e responsabilidades definidos.
+-   [x] Estratégias de concorrência e idempotência documentadas.
+-   [x] Decisão sobre autenticação registrada.
+-   [x] Documentação inicial criada.
 
 **Entregável:** documentação arquitetural inicial e plano de
 implementação aprovado.
@@ -180,12 +180,12 @@ distributed-wagering-processor/
 
 **Critérios de conclusão:**
 
--   [ ] Aplicação NestJS inicia corretamente.
--   [ ] PostgreSQL fica disponível pelo Docker Compose.
--   [ ] SQS local fica disponível.
--   [ ] Aplicação conecta-se ao banco e à mensageria.
--   [ ] Variáveis de ambiente estão documentadas.
--   [ ] Scripts básicos funcionam.
+-   [x] Aplicação NestJS inicia corretamente.
+-   [x] PostgreSQL fica disponível pelo Docker Compose.
+-   [x] SQS local fica disponível.
+-   [x] Aplicação conecta-se ao banco e à mensageria.
+-   [x] Variáveis de ambiente estão documentadas.
+-   [x] Scripts básicos funcionam.
 
 **Entregável:** ambiente local reproduzível com aplicação, PostgreSQL e
 SQS.
