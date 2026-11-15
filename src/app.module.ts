@@ -7,6 +7,7 @@ import { HealthModule } from './modules/health/health.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { LedgerModule } from './modules/ledger/ledger.module';
 import { WageringModule } from './modules/wagering/wagering.module';
+import { ReconciliationModule } from './modules/reconciliation/reconciliation.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { WageringModule } from './modules/wagering/wagering.module';
     WalletModule,
     LedgerModule,
     WageringModule,
+    ReconciliationModule,
   ],
 })
 export class AppModule {}

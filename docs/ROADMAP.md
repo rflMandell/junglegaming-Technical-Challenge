@@ -453,12 +453,12 @@ HTTP consistentes.
 
 **Critérios de conclusão:**
 
--   [ ] Todos os endpoints obrigatórios estão disponíveis.
--   [ ] Validações de entrada funcionam.
--   [ ] Respostas e erros são consistentes.
--   [ ] Idempotência HTTP está integrada.
--   [ ] Documentação OpenAPI está acessível.
--   [ ] Health checks distinguem liveness e readiness.
+-   [x] Todos os endpoints obrigatórios estão disponíveis.
+-   [x] Validações de entrada funcionam.
+-   [x] Respostas e erros são consistentes.
+-   [x] Idempotência HTTP está integrada.
+-   [x] Documentação OpenAPI está acessível.
+-   [x] Health checks distinguem liveness e readiness.
 
 **Entregável:** API HTTP documentada e funcional.
 

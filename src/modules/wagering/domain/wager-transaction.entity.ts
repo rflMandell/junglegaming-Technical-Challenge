@@ -7,6 +7,7 @@ import { LedgerDirection } from '../../ledger/domain/ledger-direction.enum';
 import { WagerTransactionKind } from './wager-transaction-kind.enum';
 import { WagerTransactionStatus } from './wager-transaction-status.enum';
 import { FailureCode } from './failure-code.enum';
+import { BusinessRuleViolationError } from './wagering.errors';
 
 export interface CreateWagerTransactionProps {
   id: string;
@@ -74,7 +75,7 @@ export class WagerTransaction {
       (props.kind === WagerTransactionKind.Refund || props.kind === WagerTransactionKind.Rollback) &&
       !props.referenceExternalTransactionId
     ) {
-      throw new DomainError(
+      throw new BusinessRuleViolationError(
         `Transaction of kind '${props.kind}' requires a 'referenceExternalTransactionId'`,
       );
     }
@@ -211,7 +212,7 @@ export class WagerTransaction {
 
       case WagerTransactionKind.Rollback:
         if (!reference) {
-          throw new DomainError('Cannot determine ledger direction for ROLLBACK without reference transaction');
+          throw new BusinessRuleViolationError('Cannot determine ledger direction for ROLLBACK without reference transaction');
         }
         // Rollback reverses the direction of the referenced transaction
         return reference.ledgerDirectionFor() === LedgerDirection.Debit
@@ -219,7 +220,7 @@ export class WagerTransaction {
           : LedgerDirection.Debit;
 
       case WagerTransactionKind.Loss:
-        throw new DomainError('LOSS transaction has no ledger direction');
+        throw new BusinessRuleViolationError('LOSS transaction has no ledger direction');
     }
   }
 

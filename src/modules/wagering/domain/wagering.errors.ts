@@ -13,3 +13,9 @@ export class WagerTransactionNotFoundError extends DomainError {
     super(`Wager transaction '${identifier}' was not found`);
   }
 }
+
+export class BusinessRuleViolationError extends DomainError {
+  constructor(message: string) {
+    super(message);
+  }
+}
