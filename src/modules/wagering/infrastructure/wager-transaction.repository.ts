@@ -433,7 +433,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
             });
 
             if (!refEntity) {
-              tx.markPendingReference(new Date(Date.now() + 5000));
+              tx.markPendingReference(new Date());
               const txEntity = WagerTransactionEntity.fromDomain(tx);
               await em.upsert(WagerTransactionEntity, txEntity);
 

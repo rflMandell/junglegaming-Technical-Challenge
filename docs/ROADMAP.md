@@ -538,12 +538,12 @@ wager-transactions-dlq.fifo
 
 **Critérios de conclusão:**
 
--   [ ] Evento é gravado atomicamente com a operação financeira.
--   [ ] Worker encontra eventos pendentes.
--   [ ] Múltiplos publishers não perdem eventos.
--   [ ] Falhas provocam novas tentativas.
--   [ ] Publicações duplicadas são seguras.
--   [ ] Eventos possuem contratos versionados.
+-   [x] Evento é gravado atomicamente com a operação financeira.
+-   [x] Worker encontra eventos pendentes.
+-   [x] Múltiplos publishers não perdem eventos.
+-   [x] Falhas provocam novas tentativas.
+-   [x] Publicações duplicadas são seguras.
+-   [x] Eventos possuem contratos versionados.
 
 **Entregável:** publicação confiável com Transactional Outbox.
 
@@ -579,12 +579,12 @@ referenciada.
 
 **Critérios de conclusão:**
 
--   [ ] Operações sem referência não são descartadas.
--   [ ] Estado pendente é persistido.
--   [ ] Worker reprocessa operações elegíveis.
--   [ ] Backoff, limite e TTL funcionam.
--   [ ] Esgotamento resulta em rejeição auditável.
--   [ ] Reprocessamento não duplica movimentações.
+-   [x] Operações sem referência não são descartadas.
+-   [x] Estado pendente é persistido.
+-   [x] Worker reprocessa operações elegíveis.
+-   [x] Backoff, limite e TTL funcionam.
+-   [x] Esgotamento resulta em rejeição auditável.
+-   [x] Reprocessamento não duplica movimentações.
 
 **Entregável:** processamento de operações fora de ordem.
 
