@@ -11,6 +11,10 @@ import { computePayloadHash } from '../../../../shared/domain/utils/canonical-js
 export interface ProcessWagerTransactionContext {
   idempotencyKey?: string;
   correlationId?: string;
+  inbox?: {
+    consumerName: string;
+    messageId: string;
+  };
 }
 
 @Injectable()
@@ -53,6 +57,7 @@ export class ProcessWagerTransactionUseCase {
       idempotencyKey,
       payloadHash,
       correlationId: context?.correlationId,
+      inbox: context?.inbox,
     });
   }
 }

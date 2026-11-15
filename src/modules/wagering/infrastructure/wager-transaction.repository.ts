@@ -11,6 +11,7 @@ import { WagerTransactionEntity } from './wager-transaction.entity';
 import { WalletEntity } from '../../wallet/infrastructure/wallet.entity';
 import { WalletLedgerEntryEntity } from '../../ledger/infrastructure/wallet-ledger-entry.entity';
 import { OutboxMessageEntity } from '../../messaging/infrastructure/outbox-message.entity';
+import { InboxMessageEntity } from '../../messaging/infrastructure/inbox-message.entity';
 import { ProviderEntity } from '../../providers/infrastructure/provider.entity';
 import { IntegrationEvent } from '../../../shared/domain/events/integration-event';
 import { ProcessWagerTransactionResponseDto } from '../application/dtos/wager-transaction-response.dto';
@@ -153,7 +154,44 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
         provider.name = `Provider ${dto.providerId}`;
         await em.upsert(ProviderEntity, provider);
 
-        // 2. Persistent Idempotency Check inside transaction
+        // 2. Persistent Inbox Deduplication inside transaction
+        if (params.inbox) {
+          const existingInbox = await em.findOne(InboxMessageEntity, {
+            consumerName: params.inbox.consumerName,
+            messageId: params.inbox.messageId,
+          });
+
+          if (existingInbox && existingInbox.processedAt) {
+            // Already processed by inbox consumer (redelivery safety)
+            const existingTxEntity = await em.findOne(WagerTransactionEntity, {
+              providerId: dto.providerId,
+              idempotencyKey,
+            });
+
+            if (existingTxEntity) {
+              const existingTx = WagerTransactionEntity.toDomain(existingTxEntity);
+              const walletEntity = await em.findOne(WalletEntity, { id: existingTx.walletId });
+              const wallet = walletEntity ? WalletEntity.toDomain(walletEntity) : null;
+              return {
+                transactionId: existingTx.id,
+                status: existingTx.status,
+                balance: wallet ? wallet.balance.toJSON() : existingTx.money.toJSON(),
+                failureCode: existingTx.failureCode,
+                idempotentReplay: true,
+              };
+            }
+          }
+
+          const inboxEntity = new InboxMessageEntity();
+          inboxEntity.consumerName = params.inbox.consumerName;
+          inboxEntity.messageId = params.inbox.messageId;
+          inboxEntity.payloadHash = payloadHash;
+          inboxEntity.receivedAt = new Date();
+          inboxEntity.processedAt = new Date();
+          await em.upsert(InboxMessageEntity, inboxEntity);
+        }
+
+        // 3. Persistent Idempotency Check inside transaction
         const existingTxEntity = await em.findOne(WagerTransactionEntity, {
           providerId: dto.providerId,
           idempotencyKey,

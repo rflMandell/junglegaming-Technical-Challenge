@@ -19,6 +19,10 @@ export interface TransactionalWagerParams {
   idempotencyKey: string;
   payloadHash: string;
   correlationId?: string;
+  inbox?: {
+    consumerName: string;
+    messageId: string;
+  };
 }
 
 export interface WagerTransactionRepositoryPort {

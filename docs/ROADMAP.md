@@ -492,13 +492,13 @@ wager-transactions-dlq.fifo
 
 **Critérios de conclusão:**
 
--   [ ] Consumidor recebe e processa mensagens.
--   [ ] Inbox persiste a deduplicação.
--   [ ] ACK ocorre após commit.
--   [ ] Erros são classificados corretamente.
--   [ ] Retry e DLQ funcionam.
--   [ ] Redelivery não duplica efeitos.
--   [ ] Encerramento do worker é seguro.
+-   [x] Consumidor recebe e processa mensagens.
+-   [x] Inbox persiste a deduplicação.
+-   [x] ACK ocorre após commit.
+-   [x] Erros são classificados corretamente.
+-   [x] Retry e DLQ funcionam.
+-   [x] Redelivery não duplica efeitos.
+-   [x] Encerramento do worker é seguro.
 
 **Entregável:** processamento assíncrono confiável.
 
