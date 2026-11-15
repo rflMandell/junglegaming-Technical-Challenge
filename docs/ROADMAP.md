@@ -225,13 +225,13 @@ banco de dados ou mensageria.
 
 **Critérios de conclusão:**
 
--   [ ] `Money` é imutável e não utiliza tipos de ponto flutuante.
--   [ ] Entradas monetárias inválidas são rejeitadas.
--   [ ] Conflitos de moeda são tratados.
--   [ ] Entidades possuem estado encapsulado.
--   [ ] Reidratação não reexecuta regras de transição.
--   [ ] Transições e estados terminais estão definidos.
--   [ ] Testes unitários do domínio estão passando.
+-   [x] `Money` é imutável e não utiliza tipos de ponto flutuante.
+-   [x] Entradas monetárias inválidas são rejeitadas.
+-   [x] Conflitos de moeda são tratados.
+-   [x] Entidades possuem estado encapsulado.
+-   [x] Reidratação não reexecuta regras de transição.
+-   [x] Transições e estados terminais estão definidos.
+-   [x] Testes unitários do domínio estão passando.
 
 **Entregável:** domínio implementado e testado independentemente da
 infraestrutura.
@@ -268,11 +268,11 @@ PostgreSQL.
 
 **Critérios de conclusão:**
 
--   [ ] Migrations executam e revertem corretamente.
--   [ ] Constraints críticas estão no schema.
--   [ ] Índices necessários foram criados.
--   [ ] Relacionamentos e unicidades foram testados.
--   [ ] Persistência e reidratação preservam os valores do domínio.
+-   [x] Migrations executam e revertem corretamente.
+-   [x] Constraints críticas estão no schema.
+-   [x] Índices necessários foram criados.
+-   [x] Relacionamentos e unicidades foram testados.
+-   [x] Persistência e reidratação preservam os valores do domínio.
 
 **Entregável:** schema relacional, migrations e constraints validadas.
 
@@ -306,12 +306,12 @@ histórico financeiro.
 
 **Critérios de conclusão:**
 
--   [ ] Criação de carteira funciona.
--   [ ] Crédito e débito funcionam.
--   [ ] Saldo insuficiente é impedido.
--   [ ] `OPENING` gera lançamento correspondente.
--   [ ] Ledger não pode ser alterado ou excluído pelo fluxo normal.
--   [ ] Saldo e ledger permanecem consistentes.
+-   [x] Criação de carteira funciona.
+-   [x] Crédito e débito funcionam.
+-   [x] Saldo insuficiente é impedido.
+-   [x] `OPENING` gera lançamento correspondente.
+-   [x] Ledger não pode ser alterado ou excluído pelo fluxo normal.
+-   [x] Saldo e ledger permanecem consistentes.
 
 **Entregável:** módulo financeiro básico funcional.
 
@@ -344,12 +344,12 @@ apostas.
 
 **Critérios de conclusão:**
 
--   [ ] Todas as operações estão implementadas.
--   [ ] Regras de referência são respeitadas.
--   [ ] Reversões duplicadas são impedidas.
--   [ ] Rejeições são auditáveis.
--   [ ] Operações sem efeito no saldo não criam ledger.
--   [ ] Testes unitários cobrem regras válidas e inválidas.
+-   [x] Todas as operações estão implementadas.
+-   [x] Regras de referência são respeitadas.
+-   [x] Reversões duplicadas são impedidas.
+-   [x] Rejeições são auditáveis.
+-   [x] Operações sem efeito no saldo não criam ledger.
+-   [x] Testes unitários cobrem regras válidas e inválidas.
 
 **Entregável:** motor de transações financeiras completo.
 
@@ -396,14 +396,14 @@ operações simultâneas.
 
 **Critérios de conclusão:**
 
--   [ ] Replay idêntico retorna resultado original.
--   [ ] Payload divergente com a mesma chave gera conflito.
--   [ ] Cinquenta submissões paralelas da mesma aposta geram um único
+-   [x] Replay idêntico retorna resultado original.
+-   [x] Payload divergente com a mesma chave gera conflito.
+-   [x] Cinquenta submissões paralelas da mesma aposta geram um único
     efeito.
--   [ ] O cenário de duas apostas concorrentes produz o resultado
+-   [x] O cenário de duas apostas concorrentes produz o resultado
     esperado.
--   [ ] Múltiplas instâncias preservam as invariantes.
--   [ ] Wallets diferentes podem ser processadas em paralelo.
+-   [x] Múltiplas instâncias preservam as invariantes.
+-   [x] Wallets diferentes podem ser processadas em paralelo.
 
 **Entregável:** processamento idempotente e concorrente seguro.
 

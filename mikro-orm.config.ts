@@ -1,5 +1,11 @@
 import { defineConfig } from '@mikro-orm/postgresql';
 import { Migrator } from '@mikro-orm/migrations';
+import { ProviderEntity } from './src/modules/providers/infrastructure/provider.entity';
+import { WalletEntity } from './src/modules/wallet/infrastructure/wallet.entity';
+import { WagerTransactionEntity } from './src/modules/wagering/infrastructure/wager-transaction.entity';
+import { WalletLedgerEntryEntity } from './src/modules/ledger/infrastructure/wallet-ledger-entry.entity';
+import { InboxMessageEntity } from './src/modules/messaging/infrastructure/inbox-message.entity';
+import { OutboxMessageEntity } from './src/modules/messaging/infrastructure/outbox-message.entity';
 
 export default defineConfig({
   host: process.env.DB_HOST || 'localhost',
@@ -7,13 +13,15 @@ export default defineConfig({
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   dbName: process.env.DB_NAME || 'wagering_db',
-  entities: ['./dist/src/**/*.entity.js'],
-  entitiesTs: ['./src/**/*.entity.ts'],
+  entities: [
+    ProviderEntity,
+    WalletEntity,
+    WagerTransactionEntity,
+    WalletLedgerEntryEntity,
+    InboxMessageEntity,
+    OutboxMessageEntity,
+  ],
   extensions: [Migrator],
-  discovery: {
-    warnWhenNoEntities: false,
-    requireEntitiesArray: false,
-  },
   migrations: {
     path: './migrations',
     pathTs: './migrations',
@@ -25,5 +33,5 @@ export default defineConfig({
     min: Number(process.env.DB_POOL_MIN) || 2,
     max: Number(process.env.DB_POOL_MAX) || 20,
   },
-  debug: process.env.NODE_ENV === 'development',
+  debug: false,
 });

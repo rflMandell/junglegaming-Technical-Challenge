@@ -4,6 +4,9 @@ import { LoggerModule } from 'nestjs-pino';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { MessagingModule } from './infrastructure/messaging/messaging.module';
 import { HealthModule } from './modules/health/health.module';
+import { WalletModule } from './modules/wallet/wallet.module';
+import { LedgerModule } from './modules/ledger/ledger.module';
+import { WageringModule } from './modules/wagering/wagering.module';
 
 @Module({
   imports: [
@@ -30,6 +33,9 @@ import { HealthModule } from './modules/health/health.module';
     DatabaseModule,
     MessagingModule,
     HealthModule,
+    WalletModule,
+    LedgerModule,
+    WageringModule,
   ],
 })
 export class AppModule {}
