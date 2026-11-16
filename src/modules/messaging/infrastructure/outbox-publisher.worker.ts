@@ -4,6 +4,7 @@ import {
   Logger,
   OnModuleInit,
   OnModuleDestroy,
+  Optional,
 } from '@nestjs/common';
 import {
   OUTBOX_REPOSITORY_PORT,
@@ -14,6 +15,7 @@ import {
   EVENT_PUBLISHER_PORT,
   type EventPublisherPort,
 } from '../application/ports/event-publisher.port';
+import { MetricsService } from '../../metrics/metrics.service';
 
 @Injectable()
 export class OutboxPublisherWorker implements OnModuleInit, OnModuleDestroy {
@@ -31,6 +33,8 @@ export class OutboxPublisherWorker implements OnModuleInit, OnModuleDestroy {
     private readonly outboxRepository: OutboxRepositoryPort,
     @Inject(EVENT_PUBLISHER_PORT)
     private readonly eventPublisher: EventPublisherPort,
+    @Optional()
+    private readonly metricsService?: MetricsService,
   ) {
     this.pollIntervalMs = Number(process.env.OUTBOX_POLL_INTERVAL_MS) || 1000;
     this.batchSize = Number(process.env.OUTBOX_BATCH_SIZE) || 50;
@@ -105,6 +109,15 @@ export class OutboxPublisherWorker implements OnModuleInit, OnModuleDestroy {
           `Outbox poll cycle complete: ${result.publishedCount} published, ${result.failedCount} failed`,
         );
       }
+
+      if (result.failedCount > 0) {
+        for (let i = 0; i < result.failedCount; i++) {
+          this.metricsService?.recordRetry('outbox_publisher');
+        }
+      }
+
+      const pending = await this.outboxRepository.countPending();
+      this.metricsService?.setOutboxLag(pending);
 
       // If full batch was processed, immediately process next batch to drain backlog quickly
       const nextDelay = result.remainingCandidates ? 10 : this.pollIntervalMs;

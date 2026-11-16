@@ -609,11 +609,11 @@ saldo reconstruído pelo ledger.
 
 **Critérios de conclusão:**
 
--   [ ] Saldo calculado pelo ledger está disponível.
--   [ ] Comparação com saldo materializado funciona.
--   [ ] Diferenças são reportadas.
--   [ ] Divergências são observáveis.
--   [ ] Nenhuma correção silenciosa é realizada.
+-   [x] Saldo calculado pelo ledger está disponível.
+-   [x] Comparação com saldo materializado funciona.
+-   [x] Diferenças são reportadas.
+-   [x] Divergências são observáveis.
+-   [x] Nenhuma correção silenciosa é realizada.
 
 **Entregável:** mecanismo de auditoria e reconciliação.
 
@@ -655,12 +655,12 @@ logs.
 
 **Critérios de conclusão:**
 
--   [ ] Logs estruturados estão disponíveis.
--   [ ] Campos de correlação são propagados.
--   [ ] Dados sensíveis não são expostos.
--   [ ] Métricas obrigatórias estão instrumentadas.
--   [ ] Health checks refletem dependências.
--   [ ] Falhas transitórias são diagnosticáveis e recuperáveis.
+-   [x] Logs estruturados estão disponíveis.
+-   [x] Campos de correlação são propagados.
+-   [x] Dados sensíveis não são expostos.
+-   [x] Métricas obrigatórias estão instrumentadas.
+-   [x] Health checks refletem dependências.
+-   [x] Falhas transitórias são diagnosticáveis e recuperáveis.
 
 **Entregável:** aplicação observável e preparada para operação.
 
@@ -673,22 +673,22 @@ containers, sem substituir PostgreSQL e SQS integralmente por mocks.
 
 #### Testes unitários
 
--   [ ] Operações e validações de `Money`.
--   [ ] Escala, precisão e entradas inválidas.
--   [ ] Invariantes de `Wallet`.
--   [ ] Regras de `BET`, `WIN`, `LOSS`, `REFUND` e `ROLLBACK`.
--   [ ] Conflitos de moeda.
--   [ ] Conflito de chave de idempotência com payload divergente.
--   [ ] Transições de estado e estados terminais.
+-   [x] Operações e validações de `Money`.
+-   [x] Escala, precisão e entradas inválidas.
+-   [x] Invariantes de `Wallet`.
+-   [x] Regras de `BET`, `WIN`, `LOSS`, `REFUND` e `ROLLBACK`.
+-   [x] Conflitos de moeda.
+-   [x] Conflito de chave de idempotência com payload divergente.
+-   [x] Transições de estado e estados terminais.
 
 #### Testes de integração
 
--   [ ] Migrations e constraints.
--   [ ] Atomicidade entre wallet, ledger, inbox e outbox.
--   [ ] Inbox e redelivery.
--   [ ] Publishers concorrentes.
--   [ ] Retry e DLQ.
--   [ ] Recuperação após reinicialização.
+-   [x] Migrations e constraints.
+-   [x] Atomicidade entre wallet, ledger, inbox e outbox.
+-   [x] Inbox e redelivery.
+-   [x] Publishers concorrentes.
+-   [x] Retry e DLQ.
+-   [x] Recuperação após reinicialização.
 
 #### Testes de concorrência e falhas
 
@@ -725,12 +725,12 @@ wallet.balance == saldo reconstruído pelo ledger
 
 **Critérios de conclusão:**
 
--   [ ] Testes unitários passam.
--   [ ] Testes de integração usam PostgreSQL e SQS em containers.
--   [ ] Testes de concorrência executam paralelismo real.
--   [ ] Cenários de falha e recuperação passam.
--   [ ] Invariante de saldo e ledger é verificada.
--   [ ] Resultados dos testes são reproduzíveis.
+-   [x] Testes unitários passam.
+-   [x] Testes de integração usam PostgreSQL e SQS em containers.
+-   [x] Testes de concorrência executam paralelismo real.
+-   [x] Cenários de falha e recuperação passam.
+-   [x] Invariante de saldo e ledger é verificada.
+-   [x] Resultados dos testes são reproduzíveis.
 
 **Entregável:** suíte de testes que comprova correção, concorrência e
 resiliência.
@@ -782,12 +782,12 @@ avaliação técnica.
 
 **Critérios de conclusão:**
 
--   [ ] Documentação está atualizada e coerente com o código.
--   [ ] Setup funciona seguindo o README.
--   [ ] Comandos de execução e testes estão documentados.
--   [ ] Decisões e trade-offs estão justificados.
--   [ ] Limitações conhecidas estão declaradas.
--   [ ] Apresentação técnica está preparada.
+-   [x] Documentação está atualizada e coerente com o código.
+-   [x] Setup funciona seguindo o README.
+-   [x] Comandos de execução e testes estão documentados.
+-   [x] Decisões e trade-offs estão justificados.
+-   [x] Limitações conhecidas estão declaradas.
+-   [x] Apresentação técnica está preparada.
 
 **Entregável:** projeto documentado e pronto para avaliação.
 

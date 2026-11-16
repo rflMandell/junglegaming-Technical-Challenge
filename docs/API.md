@@ -245,3 +245,23 @@ Endpoints públicos (sem autenticação) para sondas de orquestração (Kubernet
 
 - `GET /health/live`: Retorna `200 OK` (`{ "status": "ok" }`) se o processo Node/Bun estiver respondendo.
 - `GET /health/ready`: Valida conectividade real com PostgreSQL e LocalStack SQS. Retorna `200 OK` se ambos estiverem operacionais; retorna `503 Service Unavailable` com relatório de dependências caso algum esteja inalcançável.
+
+---
+
+### 2.9 Telemetria e Métricas Prometheus (`GET /metrics`)
+Exportador de métricas operacionais para observabilidade, dashboards Grafana e raspagem do Prometheus.
+
+#### Parâmetros e Headers Opcionais:
+- `?format=json` ou `Accept: application/json`: Retorna métricas agregadas em JSON estruturado.
+- Padrão (`text/plain; version=0.0.4; charset=utf-8`): Formato texto padrão do Prometheus.
+
+#### Métricas Obrigatórias Expostas:
+- `wagering_transactions_total`: Contagem de transações por `status` (PROCESSED, REJECTED, PENDING_REFERENCE), `kind` e `provider`.
+- `wagering_duplicate_requests_total`: Duplicações interceptadas por idempotência persistente.
+- `wagering_retries_total`: Tentativas de retry em workers e mensageria.
+- `wagering_dlq_messages_total`: Mensagens roteadas à Dead Letter Queue.
+- `wagering_lock_conflicts_total`: Contenções de lock pessimista detectadas.
+- `wagering_outbox_lag_count`: Atraso (mensagens pendentes) no Transactional Outbox.
+- `wagering_processing_duration_ms`: Latência de processamento em milissegundos ($p50, p90, p99$).
+- `wagering_reconciliation_divergence_total`: Divergências identificadas em auditorias financeiras.
+

@@ -178,3 +178,51 @@ Conforme a seção 2 de `docs/DESAFIO.md`, autenticação não pontua na avalia�
 | **Monólito Modular** | Microserviços (Wallet Service + Wagering Service) | Evita transações distribuídas (Saga/2PC) entre saldo de carteira e ledger financeiro, que introduziriam risco de consistência eventual inaceitável para débito de apostas. |
 | **MikroORM** | TypeORM / Prisma | MikroORM possui Unit of Work genuíno, Identity Map limpo e suporte robusto a transações explícitas e locks pessimistas nativos. |
 | **Decimal.js** | Tipos nativos `number` / `float` | Pontos flutuantes IEEE 754 geram erros de arredondamento acumulados (ex: `0.1 + 0.2 = 0.30000000000000004`), o que é inaceitável e eliminatório em sistemas financeiros. |
+
+---
+
+## 9. Perguntas Técnicas da Apresentação
+
+### 1. Por que DDD foi escolhido?
+O processamento de apostas envolve regras financeiras críticas e invariantes rígidas (saldo não-negativo, balanço exato entre débito/crédito e ledger, imutabilidade de lançamentos contábeis, idempotência e matriz de estados de transação). O DDD permite isolar toda a lógica e integridade de negócio dentro de agregados e Value Objects puros (`Money`, `Wallet`, `WagerTransaction`, `WalletLedgerEntry`), desacoplados de frameworks e bancos de dados, tornando as invariantes testáveis com zero dependência externa.
+
+### 2. Como o sistema evita lost updates?
+Através da definição do `walletId` como a unidade exclusiva de concorrência e da aplicação de **Pessimistic Write Lock (`SELECT ... FOR UPDATE`)** diretamente na linha da carteira no PostgreSQL no início da transação financeira. Múltiplas requisições disputando a mesma carteira são enfileiradas determinística e temporariamente no banco, enquanto carteiras distintas processam em total paralelismo. Adicionalmente, a tabela `wallets` possui a constraint `CHECK (balance >= 0)`.
+
+### 3. Como funciona a idempotência persistente?
+Toda transação exige o cabeçalho `Idempotency-Key: <providerId>:<externalTransactionId>`. Um hash canônico (SHA-256) é gerado a partir do payload JSON normalizado recursivamente. Caso a chave já exista no banco:
+- Se o hash gravado for idêntico ao recebido, o sistema realiza **idempotent replay** retornando a resposta original persistida com `idempotentReplay: true`.
+- Se o hash diferir, o sistema rejeita a operação com status `409 Conflict` (`IDEMPOTENCY_PAYLOAD_MISMATCH`).
+- Concorrência de submissões idênticas é tratada por constraint única no banco `(provider_id, idempotency_key)` com captura de violação de unicidade e retorno seguro do resultado comitado.
+
+### 4. Por que utilizar Inbox e Outbox?
+Para assegurar a garantia de entrega **Exactly-Once semântica** e evitar o problema clássico de *dual-write*:
+- **Inbox Pattern:** Persiste `(consumer_name, message_id)` dentro da transação financeira no PostgreSQL. Redeliveries do SQS são detectadas antes de qualquer mutação, realizando ACK sem duplicar débitos. O ACK no SQS só ocorre após o commit no banco.
+- **Transactional Outbox Pattern:** Eventos de integração são gravados na tabela `outbox_messages` atomicamente com a transação financeira. Um worker com polling `FOR UPDATE SKIP LOCKED` lê os eventos pendentes e os publica no broker com retry exponencial, impedindo a perda de eventos caso o processo caia logo após o commit.
+
+### 5. Como a atomicidade é garantida?
+Todas as operações financeiras — inserção do Inbox, bloqueio e débito/crédito da `Wallet`, criação do `WalletLedgerEntry`, transição de estado da `WagerTransaction` e enfileiramento na `OutboxMessage` — são executadas sob uma **única transação PostgreSQL gerenciada pelo MikroORM**. Se qualquer validação falhar ou o banco de dados reiniciar, ocorre rollback completo.
+
+### 6. Como operações fora de ordem são tratadas?
+Quando uma operação dependente (`REFUND` ou `ROLLBACK`) chega antes da transação referenciada (`BET`), o sistema **não** a descarta nem gera falha permanente. Ela é persistida com o status `PENDING_REFERENCE`. O `PendingReferenceWorker` periodicamente busca transações pendentes usando `FOR UPDATE SKIP LOCKED` e aplica backoff exponencial. Quando a transação referenciada for comitada, a operação dependente é reprocessada e concluída. Caso atinja o limite de retries ou TTL, ela é rejeitada como `REFERENCE_NOT_FOUND`.
+
+### 7. Como o sistema se recupera após falhas?
+- Se o processo morrer antes do commit: PostgreSQL desfaz as alterações (rollback automático por desconexão), o SQS devolve a visibilidade da mensagem e outra instância reassume.
+- Se o processo morrer após o commit e antes do ACK: a mensagem reaparece na fila e o `InboxMessageEntity` impede nova execução, executando apenas o ACK pendente.
+- Se o broker de mensageria estiver temporariamente indisponível: eventos aguardam com segurança na tabela Outbox e são publicados assim que o broker for restabelecido.
+
+### 8. Como a consistência financeira é comprovada?
+Pelo princípio da contabilidade de partidas dobradas e reconciliação contínua:
+- Cada mutação de saldo gera obrigatoriamente um lançamento de ledger imutável (`WalletLedgerEntry`) com `balanceBefore`, `balanceAfter` e `direction`.
+- O endpoint `POST /wallets/:walletId/reconciliation` soma todos os lançamentos do ledger da carteira e compara com o saldo atual:
+  $$\text{difference} = \text{storedBalance} - \text{calculatedBalance}$$
+- Divergências nunca são corrigidas silenciosamente: emitem alertas críticos, sinais de métricas operacionais e relatório estruturado de auditoria.
+
+---
+
+## 10. Limitações Conhecidas e Evoluções Futuras
+
+1. **Shard de Banco por Tenant/Provedor:** Em cenários de escala massiva (> 50.000 req/s em dezenas de milhares de carteiras distintas), recomenda-se particionamento declarativo do PostgreSQL (ex: particionamento por hash de `walletId` ou shard com Citus).
+2. **Cluster Multi-Região Ativo-Ativo:** Locks pessimistas por linha (`SELECT FOR UPDATE`) requerem latência baixa com o cluster primário de banco de dados. Para multi-região ativo-ativo geodistribuído, seria necessário particionamento geográfico de carteiras (jogadores ancorados à região primária de sua carteira).
+3. **Desacoplamento de Leitura com CQRS:** Leituras de saldo e extrato paginado podem ser direcionadas a réplicas de leitura (*read replicas* assíncronas) do PostgreSQL, aliviando a instância primária para focar exclusivamente em transações de escrita e locks.
+

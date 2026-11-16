@@ -7,6 +7,7 @@ import { AppModule } from './app.module';
 import { CorrelationIdInterceptor } from './shared/presentation/interceptors/correlation-id.interceptor';
 import { GlobalHttpExceptionFilter } from './shared/presentation/filters/http-exception.filter';
 import { ProviderAuthGuard } from './shared/presentation/guards/provider-auth.guard';
+import { MetricsService } from './modules/metrics/metrics.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -16,8 +17,10 @@ async function bootstrap() {
   const logger = app.get(Logger);
   app.useLogger(logger);
 
+  const metricsService = app.get(MetricsService);
+
   // Global Interceptors, Filters, and Pipes
-  app.useGlobalInterceptors(new CorrelationIdInterceptor());
+  app.useGlobalInterceptors(new CorrelationIdInterceptor(metricsService));
   app.useGlobalFilters(new GlobalHttpExceptionFilter());
   app.useGlobalGuards(new ProviderAuthGuard());
 
@@ -43,6 +46,7 @@ async function bootstrap() {
     .addTag('Ledger', 'Audit ledger and stable cursor pagination')
     .addTag('Reconciliation', 'Financial consistency verification')
     .addTag('Health', 'Liveness and readiness probes')
+    .addTag('Metrics', 'Operational metrics and Prometheus telemetry')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

@@ -268,9 +268,9 @@ describe('SQS Asynchronous Processing & Inbox Deduplication (Integration)', () =
       initialBalance: { amount: '50.00', currency: 'BRL' },
     });
 
-    const providerId = `sqs-provider-${uuidv7().slice(0, 8)}`;
-    const betExtId = `ext-bet-multi-${uuidv7().slice(0, 8)}`;
-    const winExtId = `ext-win-multi-${uuidv7().slice(0, 8)}`;
+    const providerId = `sqs-provider-${uuidv7()}`;
+    const betExtId = `ext-bet-multi-${uuidv7()}`;
+    const winExtId = `ext-win-multi-${uuidv7()}`;
 
     // 1. Publish BET of 20.00
     await producer.publish({
@@ -302,8 +302,14 @@ describe('SQS Asynchronous Processing & Inbox Deduplication (Integration)', () =
     });
 
     // Consume messages (2 messages)
-    await consumer.pollOnce(2);
-    await consumer.pollOnce(2);
+    let totalProcessed = 0;
+    for (let i = 0; i < 5 && totalProcessed < 2; i++) {
+      const c = await consumer.pollOnce(2);
+      totalProcessed += c;
+      if (totalProcessed < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
 
     // Final balance: 50 - 20 + 80 = 110.00
     const finalWallet = await getWalletUseCase.execute(wallet.id);
@@ -351,16 +357,23 @@ describe('SQS Asynchronous Processing & Inbox Deduplication (Integration)', () =
     expect(mainReceive.Messages || []).toHaveLength(0);
 
     // Verify message arrived in DLQ
-    const dlqReceive = await sqsClient.send(
-      new ReceiveMessageCommand({
-        QueueUrl: dlqUrl,
-        MaxNumberOfMessages: 5,
-        WaitTimeSeconds: 2,
-        MessageAttributeNames: ['All'],
-      }),
-    );
-    expect(dlqReceive.Messages && dlqReceive.Messages.length).toBeGreaterThan(0);
-    const dlqMsg = dlqReceive.Messages![0];
+    let dlqReceive;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      dlqReceive = await sqsClient.send(
+        new ReceiveMessageCommand({
+          QueueUrl: dlqUrl,
+          MaxNumberOfMessages: 5,
+          WaitTimeSeconds: 2,
+          MessageAttributeNames: ['All'],
+        }),
+      );
+      if (dlqReceive.Messages && dlqReceive.Messages.length > 0) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    expect(dlqReceive?.Messages?.length || 0).toBeGreaterThan(0);
+    const dlqMsg = dlqReceive!.Messages![0];
     expect(dlqMsg.Body).toBe(malformedBody);
     expect(dlqMsg.MessageAttributes?.DlqReason?.StringValue).toContain('MALFORMED_PAYLOAD');
   });

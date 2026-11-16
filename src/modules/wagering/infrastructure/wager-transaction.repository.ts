@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Optional } from '@nestjs/common';
 import { EntityManager, LockMode, UniqueConstraintViolationException } from '@mikro-orm/postgresql';
 import { v7 as uuidv7 } from 'uuid';
 import {
@@ -28,12 +28,15 @@ import { WagerTransactionPendingReference } from '../domain/events/wager-transac
 import { WalletBalanceChanged } from '../../wallet/domain/events/wallet-balance-changed.event';
 import { LedgerDirection } from '../../ledger/domain/ledger-direction.enum';
 import { ENTITY_MANAGER_TOKEN } from '../../../infrastructure/database/database.module';
+import { MetricsService } from '../../metrics/metrics.service';
 
 @Injectable()
 export class WagerTransactionRepository implements WagerTransactionRepositoryPort {
   constructor(
     @Inject(ENTITY_MANAGER_TOKEN)
     private readonly em: EntityManager,
+    @Optional()
+    private readonly metricsService?: MetricsService,
   ) {}
 
   async findById(id: string): Promise<WagerTransaction | null> {
@@ -172,6 +175,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
               const existingTx = WagerTransactionEntity.toDomain(existingTxEntity);
               const walletEntity = await em.findOne(WalletEntity, { id: existingTx.walletId });
               const wallet = walletEntity ? WalletEntity.toDomain(walletEntity) : null;
+              this.metricsService?.recordDuplicateRequest('sqs_inbox');
               return {
                 transactionId: existingTx.id,
                 status: existingTx.status,
@@ -205,6 +209,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
 
           const walletEntity = await em.findOne(WalletEntity, { id: existingTx.walletId });
           const wallet = walletEntity ? WalletEntity.toDomain(walletEntity) : null;
+          this.metricsService?.recordDuplicateRequest('http_engine');
           return {
             transactionId: existingTx.id,
             status: existingTx.status,
@@ -257,6 +262,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
           this.persistOutboxEvent(em, event);
           await em.flush();
 
+          this.metricsService?.recordTransaction(WagerTransactionStatus.Rejected, dto.kind, dto.providerId);
           return {
             transactionId: rejectedTx.id,
             status: WagerTransactionStatus.Rejected,
@@ -297,6 +303,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
               this.persistOutboxEvent(em, event);
               await em.flush();
 
+              this.metricsService?.recordTransaction(WagerTransactionStatus.Rejected, dto.kind, dto.providerId);
               return {
                 transactionId: tx.id,
                 status: WagerTransactionStatus.Rejected,
@@ -329,6 +336,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
             this.persistOutboxEvent(em, WalletBalanceChanged.from(wallet, entry, { correlationId }));
             await em.flush();
 
+            this.metricsService?.recordTransaction(WagerTransactionStatus.Processed, dto.kind, dto.providerId);
             return {
               transactionId: tx.id,
               status: WagerTransactionStatus.Processed,
@@ -371,6 +379,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
             this.persistOutboxEvent(em, WalletBalanceChanged.from(wallet, entry, { correlationId }));
             await em.flush();
 
+            this.metricsService?.recordTransaction(WagerTransactionStatus.Processed, dto.kind, dto.providerId);
             return {
               transactionId: tx.id,
               status: WagerTransactionStatus.Processed,
@@ -402,6 +411,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
             this.persistOutboxEvent(em, WagerTransactionProcessed.from(tx, { correlationId }));
             await em.flush();
 
+            this.metricsService?.recordTransaction(WagerTransactionStatus.Processed, dto.kind, dto.providerId);
             return {
               transactionId: tx.id,
               status: WagerTransactionStatus.Processed,
@@ -440,6 +450,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
               this.persistOutboxEvent(em, WagerTransactionPendingReference.from(tx, { correlationId }));
               await em.flush();
 
+              this.metricsService?.recordTransaction(WagerTransactionStatus.PendingReference, dto.kind, dto.providerId);
               return {
                 transactionId: tx.id,
                 status: WagerTransactionStatus.PendingReference,
@@ -470,6 +481,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
               this.persistOutboxEvent(em, WagerTransactionRejected.from(tx, validation.reason, { correlationId }));
               await em.flush();
 
+              this.metricsService?.recordTransaction(WagerTransactionStatus.Rejected, dto.kind, dto.providerId);
               return {
                 transactionId: tx.id,
                 status: WagerTransactionStatus.Rejected,
@@ -511,6 +523,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
             this.persistOutboxEvent(em, WalletBalanceChanged.from(wallet, entry, { correlationId }));
             await em.flush();
 
+            this.metricsService?.recordTransaction(WagerTransactionStatus.Processed, dto.kind, dto.providerId);
             return {
               transactionId: tx.id,
               status: WagerTransactionStatus.Processed,
@@ -524,6 +537,14 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
         }
       });
     } catch (error) {
+      if (
+        (error as any)?.code === '40P01' ||
+        (error as any)?.code === '55P03' ||
+        (error as any)?.code === '40001'
+      ) {
+        this.metricsService?.recordLockConflict('wallet_lock');
+      }
+
       // 6. Handle concurrency race condition on unique constraint for idempotency key
       if (
         error instanceof UniqueConstraintViolationException ||
@@ -538,6 +559,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
           const walletEntity = await fork.findOne(WalletEntity, { id: committedTx.walletId });
           const wallet = walletEntity ? WalletEntity.toDomain(walletEntity) : null;
 
+          this.metricsService?.recordDuplicateRequest('http_engine_race');
           return {
             transactionId: committedTx.id,
             status: committedTx.status,

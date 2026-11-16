@@ -26,8 +26,8 @@ export class ProviderAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const path = request.path || request.url;
 
-    // Health check probes must remain open/unauthenticated
-    if (path.startsWith('/health')) {
+    // Health check and metrics probes must remain open/unauthenticated
+    if (path.startsWith('/health') || path.startsWith('/metrics')) {
       return true;
     }
 

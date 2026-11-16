@@ -5,6 +5,7 @@ import {
   OnModuleInit,
   OnModuleDestroy,
   forwardRef,
+  Optional,
 } from '@nestjs/common';
 import {
   SQSClient,
@@ -19,6 +20,8 @@ import { ProcessWagerTransactionUseCase } from '../../modules/wagering/applicati
 import { ProcessWagerTransactionResponseDto } from '../../modules/wagering/application/dtos/wager-transaction-response.dto';
 import { ProcessWagerTransactionDto } from '../../modules/wagering/application/dtos/process-wager-transaction.dto';
 import { classifyError, ErrorCategory } from './error-classification';
+import { MetricsService } from '../../modules/metrics/metrics.service';
+import { v7 as uuidv7 } from 'uuid';
 
 export interface WagerMessagePayload {
   dto: ProcessWagerTransactionDto;
@@ -47,6 +50,8 @@ export class WagerTransactionConsumer implements OnModuleInit, OnModuleDestroy {
     private readonly sqsClient: SQSClient,
     @Inject(forwardRef(() => ProcessWagerTransactionUseCase))
     private readonly processWagerUseCase: ProcessWagerTransactionUseCase,
+    @Optional()
+    private readonly metricsService?: MetricsService,
   ) {
     this.queueUrl =
       process.env.SQS_WAGER_TRANSACTIONS_QUEUE_URL ||
@@ -275,6 +280,7 @@ export class WagerTransactionConsumer implements OnModuleInit, OnModuleDestroy {
       this.logger.log(
         `Scheduling backoff retry for message ${messageId} (attempt ${receiveCount}) with visibility ${backoffSeconds}s`,
       );
+      this.metricsService?.recordRetry('sqs_consumer');
 
       try {
         if (!receiptHandle.startsWith('mock-')) {
@@ -322,8 +328,7 @@ export class WagerTransactionConsumer implements OnModuleInit, OnModuleDestroy {
     try {
       const dlqMessageGroupId =
         message.Attributes?.MessageGroupId || 'unassigned-group';
-      const dlqDeduplicationId =
-        message.Attributes?.MessageDeduplicationId || message.MessageId;
+      const dlqDeduplicationId = `dlq-${message.MessageId || uuidv7()}-${uuidv7()}`;
 
       await this.sqsClient.send(
         new SendMessageCommand({
@@ -344,6 +349,7 @@ export class WagerTransactionConsumer implements OnModuleInit, OnModuleDestroy {
           },
         }),
       );
+      this.metricsService?.recordDlqMessage(this.dlqUrl);
       this.logger.warn(`Forwarded message ${message.MessageId} to DLQ. Reason: ${reason}`);
     } catch (dlqErr) {
       this.logger.error(`Failed to forward message ${message.MessageId} to DLQ`, dlqErr);

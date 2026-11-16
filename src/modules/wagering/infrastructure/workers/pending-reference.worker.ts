@@ -4,11 +4,13 @@ import {
   Logger,
   OnModuleInit,
   OnModuleDestroy,
+  Optional,
 } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { ENTITY_MANAGER_TOKEN } from '../../../../infrastructure/database/database.module';
 import { ReprocessPendingReferenceUseCase } from '../../application/use-cases/reprocess-pending-reference.use-case';
 import { WagerTransactionStatus } from '../../domain/wager-transaction-status.enum';
+import { MetricsService } from '../../../metrics/metrics.service';
 
 export interface PendingReferenceBatchResult {
   processedCount: number;
@@ -33,6 +35,8 @@ export class PendingReferenceWorker implements OnModuleInit, OnModuleDestroy {
     @Inject(ENTITY_MANAGER_TOKEN)
     private readonly em: EntityManager,
     private readonly reprocessUseCase: ReprocessPendingReferenceUseCase,
+    @Optional()
+    private readonly metricsService?: MetricsService,
   ) {
     this.pollIntervalMs = Number(process.env.PENDING_REFERENCE_POLL_INTERVAL_MS) || 5000;
     this.maxRetries = Number(process.env.PENDING_REFERENCE_MAX_RETRIES) || 5;
@@ -122,6 +126,7 @@ export class PendingReferenceWorker implements OnModuleInit, OnModuleDestroy {
           rejectedCount++;
         } else {
           pendingCount++;
+          this.metricsService?.recordRetry('pending_reference');
         }
       } catch (err) {
         this.logger.error(`Error reprocessing pending reference transaction ${txId}`, err);
